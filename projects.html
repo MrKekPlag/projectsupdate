@@ -384,7 +384,6 @@
             <div id="employee-rating">Рассчитываемая оценка: <span id="calculated-rating"></span></div>
         </div>
     </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             loadStatuses();
@@ -419,6 +418,29 @@
             } catch (error) {
                 console.error('Error loading statuses:', error);
             }
+        }
+
+        function getStatuses() {
+            return JSON.parse(localStorage.getItem('statuses')) || [];
+        }
+
+        function getStatusColor(status) {
+            const statuses = getStatuses();
+            const matchedStatus = statuses.find(s => s.name === status);
+            return matchedStatus ? matchedStatus.color : '#007bff';
+        }
+
+        function formatDateToEU(dateStr) {
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}.${month}.${year}`;
+        }
+
+        function formatDateFromEU(dateStr) {
+            if (!dateStr || dateStr === 'undefined.undefined.undefined') return '';
+            const [day, month, year] = dateStr.split('.');
+            if (!day || !month || !year) return '';
+            return `${year}-${month}-${day}`;
         }
 
         async function loadProjects() {
@@ -616,6 +638,14 @@
                 options += `<option value="${i}">${i}</option>`;
             }
             return options;
+        }
+
+        function calculateFinalRating(managerRating, customerRating, weight) {
+            if (customerRating === "Нет") {
+                return ((2 * managerRating) / (2 * weight)).toFixed(2);
+            }
+            const finalRating = ((2 * managerRating + parseFloat(customerRating)) / (3 * weight)).toFixed(2);
+            return finalRating;
         }
 
         async function updateGoal(projectId, goalName) {
