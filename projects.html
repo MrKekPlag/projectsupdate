@@ -618,14 +618,6 @@
             return options;
         }
 
-        function calculateFinalRating(managerRating, customerRating, weight) {
-            if (customerRating === "Нет") {
-                return ((2 * managerRating) / (2 * weight)).toFixed(2);
-            }
-            const finalRating = ((2 * managerRating + parseFloat(customerRating)) / (3 * weight)).toFixed(2);
-            return finalRating;
-        }
-
         async function updateGoal(projectId, goalName) {
             try {
                 const response = await fetch(`http://91.147.92.132:3000/projects/${projectId}/goal`, {
