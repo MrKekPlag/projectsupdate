@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Проекты Генерации</title>
     <style>
-        /* Your CSS styles */
+        /* Add your styles here */
         body {
             background-color: #222;
             color: #fff;
@@ -546,9 +546,8 @@
                             <th>Фаза</th>
                             <th>Оценка Руководства</th>
                             <th>Оценка Заказчика</th>
-                            <th>Вес</th>
-                            <th>Рассчитываемая оценка проекта</th>
-                            <th>Действия</th>
+                            <th>Бюджет</th>
+                            <th></th>
                         </tr>
                     `;
 
@@ -556,14 +555,11 @@
 
                     employeeProjects.forEach(project => {
                         project.goals.forEach(goal => {
+                            if (goal.customerRating === undefined) {
+                                goal.customerRating = "Нет";
+                            }
                             if (!goal.hasOwnProperty('status')) {
                                 goal.status = 'Нет';
-                            }
-                            if (!goal.hasOwnProperty('rating')) {
-                                goal.rating = 0;
-                            }
-                            if (!goal.hasOwnProperty('customerRating')) {
-                                goal.customerRating = 'Нет';
                             }
                         });
 
@@ -585,26 +581,35 @@
                             <td><a class="project-name" onclick="openProject('${project.id}')">${project.name}</td>
                             <td>${project.id}</td>
                             <td>${project.dependencies && project.dependencies.length > 0 ? project.dependencies.join(', ') : 'Нет зависимости'}</td>
-                            <td>${selectedGoal.name}</td>
-                            <td>${selectedGoal.deadline ? formatDateToEU(selectedGoal.deadline) : ''}</td>
+                            <td>
+                                <select class="goal-select" onchange="updateGoal('${project.id}', this.value)">
+                                    ${project.goals.map(g => `<option value="${g.name}" ${g.selected ? 'selected' : ''}>${g.name}</option>`).join('')}
+                                </select>
+                            </td>
+                            <td>${formatDateToEU(selectedGoal.deadline)}</td>
                             <td>
                                 <select class="status-select status-${selectedGoal.status ? selectedGoal.status.replace(/\s/g, '_') : ''}" style="background-color: ${getStatusColor(selectedGoal.status)}" onchange="updateGoalStatus('${project.id}', '${selectedGoal.name}', this.value)">
                                     ${getStatuses().map(status => `<option value="${status.name}" ${selectedGoal.status === status.name ? 'selected' : ''}>${status.name}</option>`).join('')}
                                 </select>
                             </td>
+                            <td>${formatDateToEU(project.startDate)}</td>
+                            <td>${formatDateToEU(project.endDate)}</td>
+                            <td>${project.employees.join(', ')}</td>
+                            <td>${project.comments || 'Нет комментариев'}</td>
+                            <td>${project.phase || 'Нет фазы'}</td>
                             <td>
                                 <select class="rating" onchange="updateProjectRating('${project.id}', this.value, 'manager')">
-                                    ${generateRatingOptions(project.weight, project.rating)}
+                                    ${Array.from({ length: 11 }, (_, i) => `<option value="${i}" ${i == project.rating ? 'selected' : ''}>${i}</option>`).join('')}
                                 </select>
                             </td>
                             <td>
                                 <select class="customer-rating" onchange="updateProjectRating('${project.id}', this.value, 'customer')">
-                                    ${generateCustomerRatingOptions(project.weight, project.customerRating)}
+                                    <option value="Нет" ${project.customerRating === "Нет" ? 'selected' : ''}>Нет</option>
+                                    ${Array.from({ length: 11 }, (_, i) => `<option value="${i}" ${i == project.customerRating ? 'selected' : ''}>${i}</option>`).join('')}
                                 </select>
                             </td>
-                            <td>${project.weight}</td>
-                            <td>${selectedGoal.name}</td>
-                            <td>${project.finalCompletionDate}</td>
+                            <td>${project.budget || 'Не указан'}</td>
+                            <td><button class="delete-btn" onclick="deleteProject('${project.id}', 'generation')"><img src="delete.png" alt="Удалить"></button></td>
                         `;
                         tbody.appendChild(projectRow);
                     });
@@ -627,22 +632,6 @@
             }
         }
 
-        function generateRatingOptions(weight, selectedRating) {
-            let options = '';
-            for (let i = 0; i <= weight; i++) {
-                options += `<option value="${i}" ${i == selectedRating ? 'selected' : ''}>${i}</option>`;
-            }
-            return options;
-        }
-
-        function generateCustomerRatingOptions(weight, selectedRating) {
-            let options = '<option value="Нет" ' + (selectedRating === 'Нет' ? 'selected' : '') + '>Нет</option>';
-            for (let i = 0; i <= weight; i++) {
-                options += `<option value="${i}" ${i == selectedRating ? 'selected' : ''}>${i}</option>`;
-            }
-            return options;
-        }
-
         function calculateFinalRating(managerRating, customerRating, weight) {
             if (customerRating === "Нет") {
                 return ((2 * managerRating) / (2 * weight)).toFixed(2);
@@ -653,13 +642,13 @@
 
         async function updateGoal(projectId, goalName) {
             try {
-                const response = await fetch(`/projects/${projectId}/goal`, {
+                const response = await fetch(`http://91.147.92.132:3000/projects/${projectId}/goal`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ goalName, type: 'projects' })
+                    body: JSON.stringify({ goalName, type: 'generation' })
                 });
 
                 if (!response.ok) {
@@ -674,13 +663,13 @@
 
         async function updateGoalStatus(projectId, goalName, status) {
             try {
-                const response = await fetch(`/projects/${projectId}/status`, {
+                const response = await fetch(`http://91.147.92.132:3000/projects/${projectId}/status`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ goalName, status, type: 'projects' })
+                    body: JSON.stringify({ goalName, status, type: 'generation' })
                 });
 
                 if (!response.ok) {
@@ -694,24 +683,180 @@
         }
 
         async function updateProjectRating(projectId, rating, ratingType) {
+            console.log(`Updating ${ratingType} rating for project ${projectId} to ${rating}`);
             try {
-                const response = await fetch(`/projects/${projectId}/rating`, {
+                const response = await fetch(`http://91.147.92.132:3000/projects/${projectId}/rating`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ ratingType, rating, type: 'projects' })
+                    body: JSON.stringify({ ratingType, rating, type: 'generation' })
                 });
 
                 if (!response.ok) {
                     throw new Error('Failed to update project rating');
                 }
 
+                console.log('Rating updated successfully');
                 loadProjects();
             } catch (error) {
                 console.error('Error updating project rating:', error);
             }
+        }
+
+        async function updateCompletionDate(projectId, date) {
+            try {
+                const formattedDate = formatDateFromEU(date);
+                const response = await fetch(`http://91.147.92.132:3000/projects/${projectId}/completion-date`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ date: formattedDate, type: 'generation' })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update completion date');
+                }
+
+                loadProjects();
+            } catch (error) {
+                console.error('Error updating completion date:', error);
+            }
+        }
+
+        async function updateFinalCompletionDate(projectId, date) {
+            try {
+                const formattedDate = date.split('-').reverse().join('-');
+                const response = await fetch(`http://91.147.92.132:3000/projects/${projectId}/final-completion-date`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ date: formattedDate, type: 'generation' })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update final completion date');
+                }
+
+                loadProjects();
+            } catch (error) {
+                console.error('Error updating final completion date:', error);
+            }
+        }
+
+        async function deleteProject(projectId, type) {
+            try {
+                const response = await fetch(`http://91.147.92.132:3000/projects/${projectId}?type=${type}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete project');
+                }
+
+                loadProjects();
+            } catch (error) {
+                console.error('Error deleting project:', error);
+            }
+        }
+
+        function openProject(projectId) {
+            window.location.href = `project.html?id=${projectId}`;
+        }
+
+        async function openRatingMatrix(employeeName) {
+            try {
+                const response = await fetch('http://91.147.92.132:3000/projects/all', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const projects = await response.json();
+                const employeeProjects = projects.filter(project => project.employees.includes(employeeName));
+
+                const modal = document.getElementById('rating-modal');
+                const modalTitle = document.getElementById('rating-modal-title');
+                modalTitle.textContent = `Матрица оценки сотрудника: ${employeeName}`;
+
+                const ratingTableBody = document.getElementById('rating-table-body');
+                ratingTableBody.innerHTML = '';
+
+                let totalCalculatedRating = 0;
+                let countValidRatings = 0;  // Для подсчета проектов с ненулевой оценкой
+
+                employeeProjects.forEach(project => {
+                    const managerRating = project.rating || 0; // Значение по умолчанию для оценки руководства
+                    const customerRating = project.customerRating !== undefined ? project.customerRating : "Нет"; // Значение по умолчанию для оценки заказчика
+
+                    // Игнорировать проекты с оценкой руководства, равной 0
+                    if (managerRating == 0) {
+                        return;
+                    }
+
+                    const calculatedRating = calculateFinalRating(managerRating, customerRating, project.weight);
+                    totalCalculatedRating += parseFloat(calculatedRating);
+                    countValidRatings++;  // Увеличиваем счетчик для действительных оценок
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${project.name}</td>
+                        <td>${project.id}</td>
+                        <td>${managerRating}</td>
+                        <td>${customerRating}</td>
+                        <td>${project.weight}</td>
+                        <td>${calculatedRating}</td>
+                    `;
+                    ratingTableBody.appendChild(row);
+                });
+
+                // Рассчитываем среднее значение только для действительных проектов
+                const averageCalculatedRating = totalCalculatedRating / countValidRatings;
+                const calculatedRatingElem = document.getElementById('calculated-rating');
+                calculatedRatingElem.textContent = isNaN(averageCalculatedRating) ? "Нет данных" : averageCalculatedRating.toFixed(2);
+
+                updateCalculationResult(averageCalculatedRating); // Обновляем результат калькуляции
+
+                modal.style.display = 'block';
+            } catch (error) {
+                console.error('Error opening rating matrix:', error);
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('rating-modal');
+            modal.style.display = 'none';
+        }
+
+        function updateCalculationResult(averageCalculatedRating, multiplier = 1) {
+            const calculationResultElem = document.getElementById('calculation-result');
+            if (!calculationResultElem) return;  // Проверяем, что элемент существует
+
+            const inputN = parseFloat(document.getElementById('multiplier-input').value) || 1;
+            const calculationResult = averageCalculatedRating * inputN * multiplier;
+            calculationResultElem.textContent = isNaN(calculationResult) ? "Нет данных" : calculationResult.toFixed(2);
+        }
+
+        document.getElementById('multiplier-input').addEventListener('input', () => {
+            const averageCalculatedRating = parseFloat(document.getElementById('calculated-rating').textContent);
+            updateCalculationResult(averageCalculatedRating);
+        });
+
+        function applyMultiplier(multiplier) {
+            const averageCalculatedRating = parseFloat(document.getElementById('calculated-rating').textContent);
+            updateCalculationResult(averageCalculatedRating, multiplier);
         }
     </script>
 </body>
