@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Процессы сотрудников</title>
+    <title>Проекты Генерации</title>
     <style>
+        /* Add your styles here */
         body {
             background-color: #222;
             color: #fff;
@@ -136,13 +137,6 @@
             background-color: #333;
             color: #fff;
         }
-        .final-completion-date {
-            padding: 10px;
-            border: 1px solid #444;
-            border-radius: 4px;
-            background-color: #333;
-            color: #fff;
-        }
         .logo img {
             width: 150px;
         }
@@ -185,7 +179,8 @@
         .projects-table th:nth-child(10) { width: 100px; }
         .projects-table th:nth-child(11) { width: 100px; }
         .projects-table th:nth-child(12) { width: 100px; }
-        .projects-table th:nth-child(13) { width: 50px; }
+        .projects-table th:nth-child(13) { width: 100px; }
+        .projects-table th:nth-child(14) { width: 50px; }
         .rating-btn {
             background-color: #007bff;
             border: none;
@@ -282,45 +277,6 @@
             display: flex;
             justify-content: space-between;
         }
-        .dropdown {
-            position: relative;
-            display: inline-block;
-            float: right;
-            margin-top: 10px;
-        }
-        .dropbtn {
-            background-color: #007bff;
-            color: white;
-            padding: 16px;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            right: 0;
-            background-color: #333;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-        }
-        .dropdown-content a {
-            color: white;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-        }
-        .dropdown-content a:hover {
-            background-color: #575757;
-        }
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        .dropdown:hover .dropbtn {
-            background-color: #0056b3;
-        }
     </style>
 </head>
 <body>
@@ -329,12 +285,12 @@
     </div>
     <div class="header">
         <div class="header-left">
-            <h1>Процессы Сотрудников</h1>
+            <h1>Проекты Генерации</h1>
         </div>
         <div class="header-right">
             <input type="text" id="search" placeholder="Введите для поиска...">
             <select id="filter"></select>
-            <button class="primary-btn" onclick="window.location.href='new_project.html'">Новый проект</button>
+            <button class="primary-btn" onclick="window.location.href='new_project_generation.html'">Новый проект</button>
             <div class="dropdown">
                 <button class="dropbtn">Меню</button>
                 <div class="dropdown-content">
@@ -445,7 +401,7 @@
 
         async function loadProjects() {
             try {
-                const response = await fetch('http://91.147.92.132:3000/projects', {
+                const response = await fetch('http://91.147.92.132:3000/projects/generation', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
@@ -471,18 +427,27 @@
                     }
 
                     if (!project.goals) {
-                        project.goals = [{ name: 'Нет', status: 'Нет' }];
+                        project.goals = [{ name: 'Нет', status: 'Нет', rating: 0, customerRating: 'Нет' }];
                     }
 
                     console.log(`Project ${project.name} goals:`, project.goals);
 
                     const matchingGoal = project.goals.find(goal => goal.name && goal.name.toLowerCase().includes(searchQuery));
                     const matchingEmployee = project.employees.find(employee => employee && employee.toLowerCase().includes(searchQuery));
+                    const hasMatchingStatus = filterStatus === 'All' || project.goals.some(goal => {
+                        const statusMatches = goal.status === filterStatus;
+                        if (statusMatches) {
+                            console.log(`Matching project: ${project.name}, Status: ${goal.status}`);
+                        }
+                        return statusMatches;
+                    });
+
                     if (
                         (project.name && project.name.toLowerCase().includes(searchQuery)) ||
                         matchingGoal ||
                         (project.id && project.id.includes(searchQuery)) ||
-                        matchingEmployee
+                        matchingEmployee &&
+                        hasMatchingStatus
                     ) {
                         project.employees.forEach(employee => {
                             if (!employeesProjectsMap[employee]) {
@@ -532,14 +497,16 @@
                             <th>ID</th>
                             <th>Зависимость</th>
                             <th>Цель</th>
+                            <th>Срок выполнения цели</th>
                             <th>Статус</th>
+                            <th>Дата начала</th>
+                            <th>План завершения</th>
+                            <th>Ответственные</th>
+                            <th>Комментарии</th>
+                            <th>Фаза</th>
                             <th>Оценка Руководства</th>
                             <th>Оценка Заказчика</th>
-                            <th>Срок выполнения цели</th>
-                            <th>Срок выполнения</th>
-                            <th>Итоговая оценка</th>
-                            <th>Итоговая оценка заказчика</th>
-                            <th>Итоговый срок выполнения</th>
+                            <th>Бюджет</th>
                             <th></th>
                         </tr>
                     `;
@@ -579,29 +546,29 @@
                                     ${project.goals.map(g => `<option value="${g.name}" ${g.selected ? 'selected' : ''}>${g.name}</option>`).join('')}
                                 </select>
                             </td>
+                            <td>${selectedGoal.deadline ? formatDateToEU(selectedGoal.deadline) : ''}</td>
                             <td>
                                 <select class="status-select status-${selectedGoal.status ? selectedGoal.status.replace(/\s/g, '_') : ''}" style="background-color: ${getStatusColor(selectedGoal.status)}" onchange="updateGoalStatus('${project.id}', '${selectedGoal.name}', this.value)">
                                     ${getStatuses().map(status => `<option value="${status.name}" ${selectedGoal.status === status.name ? 'selected' : ''}>${status.name}</option>`).join('')}
                                 </select>
                             </td>
+                            <td>${formatDateToEU(project.startDate)}</td>
+                            <td>${formatDateToEU(project.endDate)}</td>
+                            <td>${project.employees.map(e => e).join(', ')}</td>
+                            <td>${project.comments || ''}</td>
+                            <td>${project.phase}</td>
                             <td>
                                 <select class="rating" onchange="updateProjectRating('${project.id}', this.value, 'manager')">
-                                    ${generateRatingOptions(project.weight, project.rating)}
+                                    ${generateRatingOptions(project.weight)}
                                 </select>
                             </td>
                             <td>
                                 <select class="customer-rating" onchange="updateProjectRating('${project.id}', this.value, 'customer')">
-                                    ${generateCustomerRatingOptions(project.weight, project.customerRating)}
+                                    ${generateCustomerRatingOptions(project.weight)}
                                 </select>
                             </td>
-                            <td>${selectedGoal.deadline ? formatDateToEU(selectedGoal.deadline) : ''}</td>
-                            <td>${formatDateToEU(project.deadline)}</td>
-                            <td>${project.rating || 0}/${project.weight}</td>
-                            <td>${project.customerRating || "Нет"}/${project.weight}</td>
-                            <td>
-                                <input type="date" class="final-completion-date" value="${project.finalCompletionDate ? project.finalCompletionDate : ''}" onchange="updateFinalCompletionDate('${project.id}', this.value)">
-                            </td>
-                            <td><button class="delete-btn" onclick="deleteProject('${project.id}', 'projects')"><img src="delete.png" alt="Удалить"></button></td>
+                            <td>${project.budget || 0}</td>
+                            <td><button class="delete-btn" onclick="deleteProject('${project.id}', 'generation')"><img src="delete.png" alt="Удалить"></button></td>
                         `;
                         tbody.appendChild(projectRow);
                     });
@@ -624,28 +591,20 @@
             }
         }
 
-        function generateRatingOptions(weight, currentRating) {
+        function generateRatingOptions(weight) {
             let options = '';
             for (let i = 0; i <= weight; i++) {
-                options += `<option value="${i}" ${i == currentRating ? 'selected' : ''}>${i}</option>`;
+                options += `<option value="${i}">${i}</option>`;
             }
             return options;
         }
 
-        function generateCustomerRatingOptions(weight, currentRating) {
-            let options = '<option value="Нет" ' + (currentRating === "Нет" ? 'selected' : '') + '>Нет</option>';
+        function generateCustomerRatingOptions(weight) {
+            let options = '<option value="Нет">Нет</option>';
             for (let i = 0; i <= weight; i++) {
-                options += `<option value="${i}" ${i == currentRating ? 'selected' : ''}>${i}</option>`;
+                options += `<option value="${i}">${i}</option>`;
             }
             return options;
-        }
-
-        function calculateFinalRating(managerRating, customerRating, weight) {
-            if (customerRating === "Нет") {
-                return ((2 * managerRating) / (2 * weight)).toFixed(2);
-            }
-            const finalRating = ((2 * managerRating + parseFloat(customerRating)) / (3 * weight)).toFixed(2);
-            return finalRating;
         }
 
         async function updateGoal(projectId, goalName) {
@@ -656,7 +615,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ goalName, type: 'projects' })
+                    body: JSON.stringify({ goalName, type: 'generation' })
                 });
 
                 if (!response.ok) {
@@ -677,7 +636,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ goalName, status, type: 'projects' })
+                    body: JSON.stringify({ goalName, status, type: 'generation' })
                 });
 
                 if (!response.ok) {
@@ -698,7 +657,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ ratingType, rating, type: 'projects' })
+                    body: JSON.stringify({ ratingType, rating, type: 'generation' })
                 });
 
                 if (!response.ok) {
@@ -720,7 +679,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ date: formattedDate, type: 'projects' })
+                    body: JSON.stringify({ date: formattedDate, type: 'generation' })
                 });
 
                 if (!response.ok) {
@@ -741,7 +700,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ date: date, type: 'projects' }) // Передача даты в формате yyyy-mm-dd
+                    body: JSON.stringify({ date: date, type: 'generation' })
                 });
 
                 if (!response.ok) {
@@ -751,7 +710,7 @@
                 const updatedProject = await response.json();
                 console.log('Updated project:', updatedProject);
 
-                loadProjects(); // Обновить список проектов после сохранения данных
+                loadProjects();
             } catch (error) {
                 console.error('Error updating final completion date:', error);
             }
@@ -782,7 +741,7 @@
 
         async function openRatingMatrix(employeeName) {
             try {
-                const response = await fetch('http://91.147.92.132:3000/projects/all', {
+                const response = await fetch('http://91.147.92.132:3000/projects/generation', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
@@ -803,20 +762,19 @@
                 ratingTableBody.innerHTML = '';
 
                 let totalCalculatedRating = 0;
-                let countValidRatings = 0;  // Для подсчета проектов с ненулевой оценкой
+                let countValidRatings = 0;
 
                 employeeProjects.forEach(project => {
-                    const managerRating = project.rating || 0; // Значение по умолчанию для оценки руководства
-                    const customerRating = project.customerRating !== undefined ? project.customerRating : "Нет"; // Значение по умолчанию для оценки заказчика
+                    const managerRating = project.rating || 0;
+                    const customerRating = project.customerRating !== undefined ? project.customerRating : "Нет";
 
-                    // Игнорировать проекты с оценкой руководства, равной 0
                     if (managerRating == 0) {
                         return;
                     }
 
                     const calculatedRating = calculateFinalRating(managerRating, customerRating, project.weight);
                     totalCalculatedRating += parseFloat(calculatedRating);
-                    countValidRatings++;  // Увеличиваем счетчик для действительных оценок
+                    countValidRatings++;
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -830,7 +788,7 @@
                     ratingTableBody.appendChild(row);
                 });
 
-                const result = totalCalculatedRating / (countValidRatings || 1); // Защита от деления на 0
+                const result = totalCalculatedRating / (countValidRatings || 1);
                 document.getElementById('calculation-result').textContent = result.toFixed(2);
 
                 modal.style.display = 'block';
