@@ -586,12 +586,12 @@
                             </td>
                             <td>
                                 <select class="rating" onchange="updateProjectRating('${project.id}', this.value, 'manager')">
-                                    ${generateRatingOptions(project.weight)}
+                                    ${generateRatingOptions(project.weight, project.rating)}
                                 </select>
                             </td>
                             <td>
                                 <select class="customer-rating" onchange="updateProjectRating('${project.id}', this.value, 'customer')">
-                                    ${generateCustomerRatingOptions(project.weight)}
+                                    ${generateCustomerRatingOptions(project.weight, project.customerRating)}
                                 </select>
                             </td>
                             <td>${selectedGoal.deadline ? formatDateToEU(selectedGoal.deadline) : ''}</td>
@@ -624,18 +624,18 @@
             }
         }
 
-        function generateRatingOptions(weight) {
+        function generateRatingOptions(weight, currentRating) {
             let options = '';
             for (let i = 0; i <= weight; i++) {
-                options += `<option value="${i}">${i}</option>`;
+                options += `<option value="${i}" ${i == currentRating ? 'selected' : ''}>${i}</option>`;
             }
             return options;
         }
 
-        function generateCustomerRatingOptions(weight) {
-            let options = '<option value="Нет">Нет</option>';
+        function generateCustomerRatingOptions(weight, currentRating) {
+            let options = '<option value="Нет" ' + (currentRating === "Нет" ? 'selected' : '') + '>Нет</option>';
             for (let i = 0; i <= weight; i++) {
-                options += `<option value="${i}">${i}</option>`;
+                options += `<option value="${i}" ${i == currentRating ? 'selected' : ''}>${i}</option>`;
             }
             return options;
         }
