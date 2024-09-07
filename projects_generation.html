@@ -439,49 +439,52 @@
             return `${year}-${month}-${day}`;
         }
 
+        document.addEventListener('DOMContentLoaded', () => {
+          loadProjects();
+      });
 
-                function generateRatingOptions(weight, selectedRating) {
-                    let options = '';
-                    for (let i = 0; i <= weight; i++) {
-                        options += `<option value="${i}" ${i == selectedRating ? 'selected' : ''}>${i}</option>`;
-                    }
-                    return options;
-                }
+      function generateRatingOptions(weight, selectedRating) {
+          let options = '';
+          for (let i = 0; i <= weight; i++) {
+              options += `<option value="${i}" ${i == selectedRating ? 'selected' : ''}>${i}</option>`;
+          }
+          return options;
+      }
 
-                function generateCustomerRatingOptions(weight, selectedRating) {
-                    let options = '<option value="Нет" ' + (selectedRating === 'Нет' ? 'selected' : '') + '>Нет</option>';
-                    for (let i = 0; i <= weight; i++) {
-                        options += `<option value="${i}" ${i == selectedRating ? 'selected' : ''}>${i}</option>`;
-                    }
-                    return options;
-                }
+      function generateCustomerRatingOptions(weight, selectedRating) {
+          let options = '<option value="Нет" ' + (selectedRating === 'Нет' ? 'selected' : '') + '>Нет</option>';
+          for (let i = 0; i <= weight; i++) {
+              options += `<option value="${i}" ${i == selectedRating ? 'selected' : ''}>${i}</option>`;
+          }
+          return options;
+      }
 
-                async function loadProjects() {
-                    try {
-                        const response = await fetch('/api/projects');
-                        const projects = await response.json();
+      async function loadProjects() {
+          try {
+              const response = await fetch('/api/projects');
+              const projects = await response.json();
+              const container = document.getElementById('projects-container');
+              container.innerHTML = '';
 
-                        const container = document.getElementById('projects-container');
-                        container.innerHTML = '';
+              projects.forEach(project => {
+                  const projectDiv = document.createElement('div');
+                  const weight = project.weight || 0;
+                  projectDiv.innerHTML = `
+                      <p>Проект: ${project.name}</p>
+                      <select class="rating">
+                          ${generateRatingOptions(weight, project.rating)}
+                      </select>
+                      <select class="customer-rating">
+                          ${generateCustomerRatingOptions(weight, project.customerRating)}
+                      </select>
+                  `;
+                  container.appendChild(projectDiv);
+              });
+          } catch (error) {
+              console.error('Error loading projects:', error);
+          }
+      }
 
-                        projects.forEach(project => {
-                            const projectDiv = document.createElement('div');
-                            const weight = project.weight || 0;
-                            projectDiv.innerHTML = `
-                                <p>Проект: ${project.name}</p>
-                                <select class="rating">
-                                    ${generateRatingOptions(weight, project.rating)}
-                                </select>
-                                <select class="customer-rating">
-                                    ${generateCustomerRatingOptions(weight, project.customerRating)}
-                                </select>
-                            `;
-                            container.appendChild(projectDiv);
-                        });
-                    } catch (error) {
-                        console.error('Error loading projects:', error);
-                    }
-                }
 
         function calculateFinalRating(managerRating, customerRating, weight) {
             if (customerRating === "Нет") {
