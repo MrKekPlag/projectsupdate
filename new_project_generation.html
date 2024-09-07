@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать новый проект генерации</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .form-container {
+            max-width: 800px;
+            margin: auto;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .form-container h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-container input,
+        .form-container textarea,
+        .form-container select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+        }
+        .form-container button {
+            width: calc(100% - 20px);
+            height: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .form-container .primary-action-btn {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .form-container .primary-action-btn:hover {
+            background-color: #218838;
+        }
+        .form-container .cancel-btn {
+            background-color: #6c757d;
+            color: #fff;
+        }
+        .form-container .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+        .employee-field, .goal-field {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .employee-field select, .goal-field input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+        }
+        .remove-btn, .add-btn {
+            width: 50px;
+            height: 50px;
+            padding: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .remove-btn img, .add-btn img {
+            width: 20px;
+            height: 20px;
+        }
+        .add-btn {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .add-btn:hover {
+            background-color: #0056b3;
+        }
+        .remove-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        .remove-btn:hover {
+            background-color: #c82333;
+        }
+        .dependency-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .dependency-container .add-btn {
+            background-color: #007bff;
+            color: #fff;
+            width: 50px;
+        }
+        .dependency-container .add-btn:hover {
+            background-color: #0056b3;
+        }
+        /* Styles for modal */
+        #dependencyModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #dependencyModal .modal-content {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        #dependencyModal .modal-content h2 {
+            margin-top: 0;
+        }
+        #dependencyModal .modal-content input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+        }
+        #dependencyModal .modal-content .dependency-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #444;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        #dependencyModal .modal-content .dependency-list div {
+            padding: 5px;
+            cursor: pointer;
+            border-bottom: 1px solid #555;
+        }
+        #dependencyModal .modal-content .dependency-list div:hover {
+            background-color: #555;
+        }
+        #dependencyModal .modal-content .dependency-list div.selected {
+            background-color: #007bff;
+        }
+        #dependencyModal .modal-content .dependency-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        #dependencyModal .modal-content .dependency-controls button {
+            width: 50px;
+            height: 50px;
+            padding: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #dependencyModal .modal-content .dependency-controls .add-btn {
+            background-color: #007bff;
+            color: #fff;
+        }
+        #dependencyModal .modal-content .dependency-controls .add-btn:hover {
+            background-color: #0056b3;
+        }
+        #dependencyModal .modal-content .dependency-controls .remove-btn {
+            background-color: #dc3545;
+            color: #fff;
+        }
+        #dependencyModal .modal-content .dependency-controls .remove-btn:hover {
+            background-color: #c82333;
+        }
+        #dependencyModal .modal-content .primary-action-btn,
+        #dependencyModal .modal-content .cancel-btn {
+            width: calc(50% - 10px);
+            height: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+        #dependencyModal .modal-content .primary-action-btn {
+            background-color: #28a745;
+            color: #fff;
+        }
+        #dependencyModal .modal-content .primary-action-btn:hover {
+            background-color: #218838;
+        }
+        #dependencyModal .modal-content .cancel-btn {
+            background-color: #6c757d;
+            color: #fff;
+        }
+        #dependencyModal .modal-content .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <a href="projects_generation.html" class="logo"><img src="cnrg.png" alt="C-NRG Logo" width="150"></a>
+    <div class="form-container">
+        <h1>Создать новый проект генерации</h1>
+        <label for="project-id">ID проекта</label>
+        <input type="text" id="project-id" placeholder="ID проекта" maxlength="9" oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+        <label for="project-name">Название процесса</label>
+        <input type="text" id="project-name" placeholder="Название процесса">
+        <label for="phase">Фаза</label>
+        <input type="text" id="phase" placeholder="Фаза">
+        <label for="project-dependency">Зависимость</label>
+        <div class="dependency-container">
+            <input type="text" id="dependency-list" style="flex: 1;" placeholder="Нет зависимости" readonly>
+            <button type="button" class="add-btn" style="width: 50px;" onclick="openDependencyModal()">+</button>
+        </div>
+        <label for="budget">Бюджет</label>
+        <input type="number" id="budget" placeholder="Бюджет">
+        <label for="comments">Комментарии</label>
+        <textarea id="comments" placeholder="Комментарии"></textarea>
+        <div id="goals-container">
+            <label for="goal">Цели</label>
+            <div class="goal-field">
+                <input type="text" class="goal" style="flex: 1;" placeholder="Цель">
+                <input type="date" class="goal-deadline" style="flex: 1;" placeholder="Срок выполнения цели">
+                <button type="button" class="add-btn" style="width: 50px;" onclick="addGoalField()">
+                    <img src="add.png" alt="Добавить">
+                </button>
+            </div>
+        </div>
+        <label for="weight">Вес</label>
+        <input type="number" id="weight" placeholder="Вес">
+        <div id="employees-container">
+            <label for="employee">Ответственные</label>
+            <div class="employee-field">
+                <select class="employee" style="flex: 1;"></select>
+                <button type="button" class="add-btn" style="width: 50px;" onclick="addEmployeeField()">
+                    <img src="add.png" alt="Добавить">
+                </button>
+            </div>
+        </div>
+        <label for="start-date">Дата начала</label>
+        <input type="date" id="start-date" placeholder="Дата начала">
+        <label for="end-date">План завершения</label>
+        <input type="date" id="end-date" placeholder="План завершения">
+        <button type="button" class="primary-action-btn" onclick="createProject()">Создать проект</button>
+        <button type="button" class="cancel-btn" onclick="cancel()">Отмена</button>
+    </div>
+
+    <!-- Modal for selecting dependencies -->
+    <div id="dependencyModal">
+        <div class="modal-content">
+            <h2>Выберите зависимости</h2>
+            <input type="text" id="dependency-search" placeholder="Поиск ID" oninput="searchDependencies()">
+            <div id="dependency-list-container" class="dependency-list">
+                <!-- List of dependencies will be populated here -->
+            </div>
+            <div class="dependency-controls">
+                <button type="button" class="add-btn" style="width: 50px;" onclick="addSelectedDependencies()">
+                    <img src="add.png" alt="Добавить">
+                </button>
+                <button type="button" class="remove-btn" style="width: 50px;" onclick="removeSelectedDependencies()">
+                    <img src="delete.png" alt="Удалить">
+                </button>
+            </div>
+            <button type="button" class="primary-action-btn" onclick="confirmDependencies()">Подтвердить</button>
+            <button type="button" class="cancel-btn" onclick="closeDependencyModal()">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadEmployees();
+            populateDependencyList();
+        });
+
+        async function loadEmployees() {
+            const currentSelections = Array.from(document.getElementsByClassName('employee')).map(select => select.value);
+
+            try {
+                const response = await fetch('http://91.147.92.132:3000/auth/users', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+
+                const users = await response.json();
+                const employeeSelects = document.getElementsByClassName('employee');
+                for (let i = 0; i < employeeSelects.length; i++) {
+                    const employeeSelect = employeeSelects[i];
+                    const currentSelection = currentSelections[i];
+
+                    employeeSelect.innerHTML = '';
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = `${user.firstName} ${user.lastName}`;
+                        option.textContent = `${user.firstName} ${user.lastName}`;
+                        employeeSelect.appendChild(option);
+                    });
+
+                    if (currentSelection) {
+                        employeeSelect.value = currentSelection;
+                    }
+
+                    filterEmployeeOptions(employeeSelect);
+                }
+            } catch (error) {
+                console.error('Ошибка при получении пользователей:', error);
+                alert('Ошибка при получении пользователей: ' + error.message);
+            }
+        }
+
+        function filterEmployeeOptions(selectElement) {
+            const selectedEmployees = Array.from(document.getElementsByClassName('employee')).map(select => select.value);
+            for (let option of selectElement.options) {
+                if (selectedEmployees.includes(option.value) && option.value !== selectElement.value) {
+                    option.disabled = true;
+                } else {
+                    option.disabled = false;
+                }
+            }
+        }
+
+        function addEmployeeField() {
+            const container = document.getElementById('employees-container');
+            const newEmployeeDiv = document.createElement('div');
+            newEmployeeDiv.className = 'employee-field';
+            newEmployeeDiv.innerHTML = `
+                <select class="employee" style="flex: 1;" onchange="filterAllEmployeeOptions()"></select>
+                <button type="button" class="remove-btn" style="width: 50px;" onclick="removeEmployeeField(this)">
+                    <img src="delete.png" alt="Удалить">
+                </button>
+            `;
+            container.insertBefore(newEmployeeDiv, container.querySelector('.primary-action-btn'));
+            loadEmployees();
+        }
+
+        function removeEmployeeField(button) {
+            const employeeField = button.parentElement;
+            employeeField.remove();
+            filterAllEmployeeOptions();
+        }
+
+        function filterAllEmployeeOptions() {
+            const employeeSelects = document.getElementsByClassName('employee');
+            for (let employeeSelect of employeeSelects) {
+                filterEmployeeOptions(employeeSelect);
+            }
+        }
+
+        function addGoalField() {
+            const container = document.getElementById('goals-container');
+            const newGoalDiv = document.createElement('div');
+            newGoalDiv.className = 'goal-field';
+            newGoalDiv.innerHTML = `
+                <input type="text" class="goal" style="flex: 1;" placeholder="Цель">
+                <input type="date" class="goal-deadline" style="flex: 1;" placeholder="Срок выполнения цели">
+                <button type="button" class="remove-btn" style="width: 50px;" onclick="removeGoalField(this)">
+                    <img src="delete.png" alt="Удалить">
+                </button>
+            `;
+            container.insertBefore(newGoalDiv, container.querySelector('.goal-field'));
+        }
+
+        function removeGoalField(button) {
+            const goalField = button.parentElement;
+            goalField.remove();
+        }
+
+        async function createProject() {
+            const id = document.getElementById('project-id').value.trim();
+            if (id.length !== 9 || isNaN(id)) {
+                alert('ID должен состоять из 9 цифр.');
+                return;
+            }
+
+            const name = document.getElementById('project-name').value.trim();
+            const phase = document.getElementById('phase').value.trim();
+            const dependencies = document.getElementById('dependency-list').value.split(',').map(dep => dep.trim()).filter(dep => dep);
+            const budget = document.getElementById('budget').value.trim();
+            const comments = document.getElementById('comments').value.trim();
+            const goals = Array.from(document.getElementsByClassName('goal')).map((goal, index) => ({
+                name: goal.value.trim(),
+                deadline: document.getElementsByClassName('goal-deadline')[index].value
+            }));
+            const weight = document.getElementById('weight').value;
+            const employees = Array.from(document.getElementsByClassName('employee')).map(select => select.value);
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+
+            const projectData = {
+                id,
+                name,
+                phase,
+                dependencies,
+                budget,
+                comments,
+                goals,
+                weight,
+                employees,
+                startDate,
+                endDate,
+                type: 'generation'
+            };
+
+            try {
+                const response = await fetch('http://91.147.92.132:3000/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(projectData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create project');
+                }
+
+                const createdProject = await response.json();
+                await updateProjectDependencies(createdProject.id, dependencies);
+                alert('Проект успешно создан');
+                window.location.href = 'projects_generation.html';
+            } catch (error) {
+                console.error('Ошибка при создании проекта:', error);
+                alert('Ошибка при создании проекта: ' + error.message);
+            }
+        }
+
+        async function updateProjectDependencies(newProjectId, dependencies) {
+            try {
+                const response = await fetch(`http://91.147.92.132:3000/projects/update-dependencies`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ newProjectId, dependencies })
+                });
+
+                const text = await response.text();
+                console.log('Server response text:', text);
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText + ' - ' + text);
+                }
+
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (e) {
+                    console.log('Response is not JSON:', text);
+                    return;
+                }
+
+                console.log('Dependencies updated successfully:', result);
+            } catch (error) {
+                console.error('Ошибка при обновлении зависимостей:', error);
+                alert('Ошибка при обновлении зависимостей: ' + error.message);
+            }
+        }
+
+        function openDependencyModal() {
+            const modal = document.getElementById('dependencyModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeDependencyModal() {
+            const modal = document.getElementById('dependencyModal');
+            modal.style.display = 'none';
+        }
+
+        async function populateDependencyList() {
+            try {
+                const response = await fetch('http://91.147.92.132:3000/projects/all', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+
+                const data = await response.json();
+
+                // Проверяем, что данные соответствуют ожидаемому формату
+                if (Array.isArray(data)) {
+                    const container = document.getElementById('dependency-list-container');
+                    container.innerHTML = '';
+                    data.forEach(project => {
+                        const div = document.createElement('div');
+                        div.className = 'dependency-item';
+                        div.textContent = project.id;
+                        div.onclick = () => toggleDependencySelection(div);
+                        container.appendChild(div);
+                    });
+                } else {
+                    console.error('Data is not in expected format:', data);
+                }
+            } catch (error) {
+                console.error('Error loading dependencies:', error);
+                alert('Error loading dependencies: ' + error.message);
+            }
+        }
+
+        function toggleDependencySelection(div) {
+            div.classList.toggle('selected');
+        }
+
+        function addSelectedDependencies() {
+            const selectedDependencies = Array.from(document.getElementsByClassName('selected')).map(div => div.textContent);
+            const dependencyInput = document.getElementById('dependency-list');
+            dependencyInput.value = selectedDependencies.join(', ');
+        }
+
+        function removeSelectedDependencies() {
+            const dependencyInput = document.getElementById('dependency-list');
+            dependencyInput.value = '';
+        }
+
+        function searchDependencies() {
+            const searchValue = document.getElementById('dependency-search').value.toLowerCase();
+            const dependencyItems = document.getElementsByClassName('dependency-item');
+            for (let item of dependencyItems) {
+                if (item.textContent.toLowerCase().includes(searchValue)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        }
+
+        function confirmDependencies() {
+            addSelectedDependencies();
+            closeDependencyModal();
+        }
+
+        function cancel() {
+            window.location.href = 'projects_generation.html';
+        }
+    </script>
+</body>
+</html>
